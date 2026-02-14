@@ -4,9 +4,11 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field,ConfigDict
 import logging
 from datetime import datetime
+from contextlib import asynccontextmanager
+# from fastapi import FastAPI
 
 from config import settings
 from database.db import get_db, init_db
@@ -64,8 +66,9 @@ class RestaurantResponse(BaseModel):
     is_active: bool
     created_at: datetime
     
-    class Config:
-        from_attributes = True
+    # class Config:
+        # from_attributes=True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class DishCreate(BaseModel):
@@ -74,7 +77,7 @@ class DishCreate(BaseModel):
     cuisine_type: Optional[str] = None
     category: Optional[str] = None
     price: Optional[str] = None
-    ingredients: List[str] = Field(..., min_items=1)
+    ingredients: List[str] = Field(..., min_length=1)
 
 
 class DishUpdate(BaseModel):
@@ -102,10 +105,23 @@ class DishResponse(BaseModel):
     is_dairy_free: bool
     is_available: bool
     
-    class Config:
-        from_attributes = True
+    # class Config:
+    model_config = ConfigDict(from_attributes=True)
 
 
+
+# class QRCodeResponse(BaseModel):
+#     id: int
+#     qr_code_token: str
+#     qr_code_url: str
+#     image_url: Optional[str]
+#     dish_id: int
+#     restaurant_id: int
+#     scan_count: int
+#     is_active: bool
+    
+#     class Config:
+#         from_attributes = True
 class QRCodeResponse(BaseModel):
     id: int
     qr_code_token: str
@@ -115,13 +131,24 @@ class QRCodeResponse(BaseModel):
     restaurant_id: int
     scan_count: int
     is_active: bool
-    
-    class Config:
-        from_attributes = True
+    name: str
+    description: Optional[str]
+    cuisine_type: Optional[str]
+    category: Optional[str]
+    price: Optional[str]
+    ingredients: List[str]
+    allergens: Optional[List[str]]
+    is_vegetarian: bool
+    is_vegan: bool
+    is_gluten_free: bool
+    is_dairy_free: bool
+    is_available: bool
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class AllergenAnalysisRequest(BaseModel):
-    ingredients: List[str] = Field(..., min_items=1)
+    ingredients: List[str] = Field(..., min_length=1)
 
 
 # Dependency to verify API key
@@ -145,12 +172,16 @@ async def verify_restaurant_api_key(
 
 
 # Initialize database on startup
-@app.on_event("startup")
-async def startup_event():
+# @app.on_event("startup")
+@asynccontextmanager
+async def startup_event(app: FastAPI):
     """Initialize database and perform startup tasks"""
+    print("Starting up")
     init_db()
     logger.info("✓ AllergyGuard API started successfully")
-
+    yield
+    print("Shutting down")
+app = FastAPI(lifespan=startup_event)
 
 # Health check endpoint
 @app.get("/")
