@@ -2,3 +2,4 @@
 *.mp4
 # ignore pdf files
 *.pdf
+config.py
