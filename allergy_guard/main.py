@@ -177,9 +177,16 @@ async def verify_restaurant_api_key(
 async def startup_event(app: FastAPI):
     """Initialize database and perform startup tasks"""
     print("Starting up")
+
     init_db()
+    
+
     logger.info("✓ AllergyGuard API started successfully")
+    print("Server running on http://localhost:8000")
+    print("Server running on http://localhost:8000/docs")
+    print("Server running on http://localhost:8000/redoc")
     yield
+    
     print("Shutting down")
 app = FastAPI(lifespan=startup_event)
 
