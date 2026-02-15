@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Html5QrcodeScanner } from 'html5-qrcode';
 import { analyzeDish } from '../services/geminiService';
 import { DishReport } from '../types';
 
@@ -10,6 +11,35 @@ interface Props {
 const ScanPage: React.FC<Props> = ({ onBack, onResult }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [manualId, setManualId] = useState('');
+  const [useCamera, setUseCamera] = useState(false);
+
+  useEffect(() => {
+    if (useCamera) {
+      const scanner = new Html5QrcodeScanner(
+        "qr-reader",
+        { 
+          fps: 10,
+          qrbox: { width: 250, height: 250 }
+        },
+        false
+      );
+
+      scanner.render(
+        async (decodedText) => {
+          scanner.clear();
+          setUseCamera(false);
+          await handleScan(decodedText);
+        },
+        (error) => {
+          console.warn(error);
+        }
+      );
+
+      return () => {
+        scanner.clear();
+      };
+    }
+  }, [useCamera]);
 
   const handleScan = async (dishName: string) => {
     setIsAnalyzing(true);
@@ -23,6 +53,23 @@ const ScanPage: React.FC<Props> = ({ onBack, onResult }) => {
       setIsAnalyzing(false);
     }
   };
+
+  if (useCamera) {
+    return (
+      <div className="min-h-screen bg-background-dark p-6">
+        <header className="mb-6">
+          <button 
+            onClick={() => setUseCamera(false)}
+            className="text-white flex items-center gap-2"
+          >
+            <span className="material-icons">arrow_back</span>
+            Back
+          </button>
+        </header>
+        <div id="qr-reader" className="w-full"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative h-screen w-full flex flex-col items-center justify-between overflow-hidden">
@@ -62,27 +109,43 @@ const ScanPage: React.FC<Props> = ({ onBack, onResult }) => {
               </div>
             )}
           </div>
-          <div className="absolute -bottom-16 left-0 right-0 text-center">
-            <p className="text-white/80 text-sm font-medium drop-shadow-md">Align QR code within the frame</p>
-          </div>
         </div>
       </main>
 
-      {/* Footer / Manual Input */}
+      {/* Footer */}
       <footer className="relative z-10 w-full p-6 pb-10 bg-gradient-to-t from-black via-black/80 to-transparent">
         <div className="max-w-md mx-auto space-y-6">
+          
+          {/* Real Camera Button */}
+          <button 
+            onClick={() => setUseCamera(true)}
+            className="w-full bg-primary/20 backdrop-blur-xl border border-primary/30 rounded-2xl p-5 shadow-2xl hover:bg-primary/30 transition-colors"
+          >
+            <div className="flex items-center justify-center space-x-4">
+              <div className="p-2 bg-primary/30 rounded-lg">
+                <span className="material-icons text-primary">qr_code_scanner</span>
+              </div>
+              <div className="flex-1 text-left">
+                <h3 className="font-bold text-white text-lg">Scan Real QR Code</h3>
+                <p className="text-white/60 text-sm mt-1">Use your device camera</p>
+              </div>
+            </div>
+          </button>
+
+          {/* Demo Button */}
           <div onClick={() => handleScan("Pad Thai")} className="cursor-pointer bg-white/10 backdrop-blur-xl border border-white/10 rounded-2xl p-5 shadow-2xl">
             <div className="flex items-start space-x-4">
               <div className="p-2 bg-primary/20 rounded-lg">
-                <span className="material-icons text-primary">qr_code_scanner</span>
+                <span className="material-icons text-primary">restaurant</span>
               </div>
               <div className="flex-1">
-                <h3 className="font-bold text-white text-lg leading-tight">AllergyGuard Scan</h3>
-                <p className="text-white/60 text-sm mt-1">Tap this card to simulate scanning "Pad Thai".</p>
+                <h3 className="font-bold text-white text-lg leading-tight">Demo Scan</h3>
+                <p className="text-white/60 text-sm mt-1">Tap to simulate "Pad Thai" scan</p>
               </div>
             </div>
           </div>
 
+          {/* Manual Input */}
           <div className="space-y-4">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">

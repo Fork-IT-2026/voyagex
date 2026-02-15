@@ -4,7 +4,9 @@ import DashboardPage from './pages/dashboard';
 import ScanPage from './pages/scanboard';
 import ResultPage from './pages/resultpage';
 import { Page, DishReport } from './types';
-
+<div className="bg-red-500 text-white p-10">
+  Tailwind Test
+</div>
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>(Page.LANDING);
   const [currentDish, setCurrentDish] = useState<DishReport | null>(null);
